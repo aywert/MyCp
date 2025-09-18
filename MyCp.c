@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdbool.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -16,6 +17,7 @@ struct option long_options[] = {
 
 enum flags
 {
+  no_flag,
   force, 
   verbose,
   interactive,
@@ -25,7 +27,7 @@ enum flags
 int main(int argc, char* argv[])
 {
   int opt;
-  int flag = 0;
+  int flag = no_flag;
   int option_index = 0;
 
   while ((opt = getopt_long(argc, argv, "fvi", long_options, &option_index)) != -1) 
@@ -81,12 +83,24 @@ int main(int argc, char* argv[])
   char buf[128];
   if (S_ISDIR(file_stat.st_mode)) // determening that the last string referring to dir
   {
-    printf("iam here\n");
     for (int i = optind; i < argc -1; i++)
     {
       strcpy(buf, argv[argc-1]);
       buf[strlen(buf)] = '/';
       char * result = strcat(buf, argv[i]);
+
+
+      if (flag == interactive)
+      {
+        printf("MyCp overwrite '%s'? ", result);
+        if(getchar() != 'y')
+        {
+          while((getchar())!= '\n'); //cleaning buffer
+          continue;
+        }
+
+        while((getchar())!= '\n'); //cleaning buffer
+      }
 
       int fd_1 = open(argv[i], O_RDONLY);
       if (fd_1 < 0)
@@ -95,7 +109,7 @@ int main(int argc, char* argv[])
         exit(-1);
       }
 
-      int fd_2 = open(result, O_WRONLY|O_CREAT, 0666);
+      int fd_2 = open(result, O_WRONLY|O_CREAT|O_TRUNC, 0666);
       if (fd_2 < 0)
       {
         fprintf(stderr, "MyCat: %s: %s\n", result, strerror(errno));
@@ -105,15 +119,7 @@ int main(int argc, char* argv[])
       if (flag == verbose)
         printf("'%s' -> '%s'\n", argv[i], result);
 
-      if (flag == interactive)
-      {
-        printf("MyCp overwrite '%s'", result);
-        if(getchar() == 'y')
-          CopyFile(fd_1, fd_2, buf);
-        while(getchar()!= '\n'); //cleaning buffer
-      }
-
-      
+      CopyFile(fd_1, fd_2, buf);
 
       close(fd_1);
       close(fd_2);
@@ -122,14 +128,35 @@ int main(int argc, char* argv[])
 
   if(S_ISREG(file_stat.st_mode))
   {
-    int fd_1 = Open(argv[optind], O_RDONLY); //openning file to copy 
-    int fd_2 = Open(argv[optind + 1], O_WRONLY|O_CREAT, 0666);
+    if (flag == interactive)
+    {
+      printf("MyCp overwrite '%s'? ", argv[optind+1]);
+      if(getchar() != 'y')
+        {
+          while((getchar())!= '\n'); //cleaning buffer
+          return 0;
+        }
+
+      while((getchar())!= '\n'); //cleaning buffer
+    }
+
+    int fd_1 = open(argv[optind], O_RDONLY); //openning file to copy 
+    if (fd_1 < 0)
+      {
+        fprintf(stderr, "MyCat: %s: %s\n", argv[optind], strerror(errno));
+        exit(-1);
+      }
+
+    int fd_2 = open(argv[optind + 1], O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    if (fd_1 < 0)
+      {
+        fprintf(stderr, "MyCat: %s: %s\n", argv[optind+1], strerror(errno));
+        exit(-1);
+      }
 
     if (flag == verbose)
-    {
       printf("'%s' -> '%s'\n", argv[optind], argv[optind+1]);
-    }
-    
+
     CopyFile(fd_1, fd_2, buf);
 
     close(fd_1);
