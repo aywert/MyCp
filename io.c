@@ -25,14 +25,14 @@ ssize_t Read(int fd, char buf[], ssize_t size)
   return n;
 }
 
-int Open(char * filename)
+int Open(char * filename, int o_flags, ...)
 {
-  int fd = open(filename, O_RDONLY);
-    if (fd < 0)
-    {
-      fprintf(stderr, "MyCat: %s: %s\n", filename, strerror(errno));
-      exit(-1);
-    }
+  int fd = open(filename, o_flags);
+  if (fd < 0)
+  {
+    fprintf(stderr, "MyCat: %s: %s\n", filename, strerror(errno));
+    exit(-1);
+  }
 
   return fd;
 }

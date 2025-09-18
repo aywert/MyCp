@@ -12,7 +12,7 @@
 
 ssize_t Write(int fd, char buf[], ssize_t size);
 ssize_t Read(int fd, char buf[], ssize_t size);
-int Open(char * filename);
+int Open(char * filename, int o_flags, ...);
 void CopyFile(int fd_read, int fd_write, char* buf);
 
 #endif

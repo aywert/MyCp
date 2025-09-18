@@ -25,8 +25,6 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  
-
   if (argc == 1)
   {
     fprintf(stderr, "MyCp: missing file operand\n");
@@ -39,6 +37,12 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
+  if (argc > 3 && !S_ISDIR(file_stat.st_mode))
+  {
+    fprintf(stderr, "MyCp: target '%s': Not a directory\n", argv[argc-1]);
+    exit(-1);
+  }
+
   char buf[128];
   if (S_ISDIR(file_stat.st_mode)) // determening that the last string referring to dir
   {
@@ -48,11 +52,17 @@ int main(int argc, char* argv[])
       buf[strlen(buf)] = '/';
       char * result = strcat(buf, argv[i]);
 
-      int fd_1 = Open(argv[i]); //openning file to copy 
-      int fd_2 = open(result, O_WRONLY|O_CREAT, 0777);
+      int fd_1 = open(argv[i], O_RDONLY);
+      if (fd_1 < 0)
+      {
+        fprintf(stderr, "MyCat: %s: %s\n", argv[i], strerror(errno));
+        exit(-1);
+      }
+
+      int fd_2 = open(result, O_WRONLY|O_CREAT, 0666);
       if (fd_2 < 0)
       {
-        fprintf(stderr, "MyCp: %s", strerror(errno));
+        fprintf(stderr, "MyCat: %s: %s\n", result, strerror(errno));
         exit(-1);
       }
 
@@ -63,7 +73,16 @@ int main(int argc, char* argv[])
     }
   }
 
-  //if(S_ISREG(file_stat.st_mode))
+  if(S_ISREG(file_stat.st_mode))
+  {
+    int fd_1 = Open(argv[1], O_RDONLY); //openning file to copy 
+    int fd_2 = Open(argv[2], O_WRONLY|O_CREAT, 0666);
+
+    CopyFile(fd_1, fd_2, buf);
+
+    close(fd_1);
+    close(fd_2);
+  }
 
   int opt;
   int option_index = 0;
