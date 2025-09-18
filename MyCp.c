@@ -49,12 +49,11 @@ int main(int argc, char* argv[])
   }
 
   struct stat file_stat;
-  for (int i = 0; i < argc; i++)
-  {
-    printf("%s ", argv[i]);
-  }
+  // for (int i = 0; i < argc; i++)
+  // {
+  //   printf("%s ", argv[i]);
+  // }
 
-  printf("\nit is me: %s\n", argv[argc-1]);
   if (stat(argv[argc-1], &file_stat) == -1) 
   {
     perror("stat");
@@ -82,6 +81,7 @@ int main(int argc, char* argv[])
   char buf[128];
   if (S_ISDIR(file_stat.st_mode)) // determening that the last string referring to dir
   {
+    printf("iam here\n");
     for (int i = optind; i < argc -1; i++)
     {
       strcpy(buf, argv[argc-1]);
@@ -102,7 +102,18 @@ int main(int argc, char* argv[])
         exit(-1);
       }
 
-      CopyFile(fd_1, fd_2, buf);
+      if (flag == verbose)
+        printf("'%s' -> '%s'\n", argv[i], result);
+
+      if (flag == interactive)
+      {
+        printf("MyCp overwrite '%s'", result);
+        if(getchar() == 'y')
+          CopyFile(fd_1, fd_2, buf);
+        while(getchar()!= '\n'); //cleaning buffer
+      }
+
+      
 
       close(fd_1);
       close(fd_2);
@@ -114,6 +125,11 @@ int main(int argc, char* argv[])
     int fd_1 = Open(argv[optind], O_RDONLY); //openning file to copy 
     int fd_2 = Open(argv[optind + 1], O_WRONLY|O_CREAT, 0666);
 
+    if (flag == verbose)
+    {
+      printf("'%s' -> '%s'\n", argv[optind], argv[optind+1]);
+    }
+    
     CopyFile(fd_1, fd_2, buf);
 
     close(fd_1);
