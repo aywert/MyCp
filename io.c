@@ -36,3 +36,24 @@ int Open(char * filename)
 
   return fd;
 }
+
+void CopyFile(int fd_read, int fd_write, char* buf)
+{
+    int n = 0;
+    ssize_t written = 0;
+  do
+  {
+    n = Read(fd_read, buf, sizeof(buf));
+
+    while(n != written)
+    {
+      ssize_t w = Write(fd_write, buf + written, n);
+      written += w;
+    }
+
+    for(int i = 0; i < sizeof(buf); i++) buf[i] = 0;
+    written = 0;
+  } while(n != 0);
+
+  return;
+}
