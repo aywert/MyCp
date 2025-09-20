@@ -41,7 +41,6 @@ void CopyFile(int fd_read, int fd_write, char* buf)
 {
     int n = 0;
     ssize_t written = 0;
-    printf("Write\n");
   do
   {
     n = Read(fd_read, buf, sizeof(buf));

@@ -22,11 +22,21 @@ enum flags
   interactive,
 };
 
+struct flags_in_line
+{
+  bool no_flag;
+  bool force;
+  bool verbose;
+  bool interactive;
+};
+
 int main(int argc, char *argv[])
 {
   int opt;
   int flag = no_flag;
   int option_index = 0;
+
+  struct flags_in_line state = {0};
 
   // if (mkdir("dir_000", 0400) == -1) {
   //     perror("Ошибка создания папки");
@@ -45,28 +55,31 @@ int main(int argc, char *argv[])
   //   printf("Файл создан: %s с правами %o\n", "no_acces_file.txt", 0400);
   //   return 0;
 
-  if (access(argv[argc-1], W_OK) == 0)
-  {
-    printf("Есть право на запись\n");
-  }
-  else
-  {
-    printf("нет права на запись\n");
-  }
+  // if (access(argv[argc-1], W_OK) == 0)
+  // {
+  //   printf("Есть право на запись\n");
+  // }
+  // else
+  // {
+  //   printf("нет права на запись\n");
+  // }
 
   while ((opt = getopt_long(argc, argv, "fvi", long_options, &option_index)) != -1)
   {
     switch (opt)
     {
     case 'v':
+      state.verbose = true;
       flag = verbose;
       break;
 
     case 'f':
+      state.force = true;
       flag = force;
       break;
 
     case 'i':
+      state.interactive = true;
       flag = interactive;
       break;
     default:
@@ -104,7 +117,7 @@ int main(int argc, char *argv[])
       buf[strlen(buf)] = '/';
       char *result = strcat(buf, argv[i]);
 
-      if (flag == interactive)
+      if (state.interactive == true)
       {
         printf("MyCp overwrite '%s'? ", result);
         if (getchar() != 'y')
@@ -118,7 +131,7 @@ int main(int argc, char *argv[])
           ; // cleaning buffer
       }
 
-      if (flag == force)
+      if (state.force == true)
       {
         if (chmod(argv[argc - 1], 0777) != 0)
         {
@@ -148,12 +161,12 @@ int main(int argc, char *argv[])
         exit(-1);
       }
 
-      if (flag == verbose)
+      if (state.verbose == true)
         printf("'%s' -> '%s'\n", argv[i], result);
 
       CopyFile(fd_1, fd_2, buf);
 
-      if (flag == force)
+      if (state.force == true)
       {
         if (chmod(argv[argc-1], file_stat.st_mode) != 0)
         {
@@ -170,7 +183,7 @@ int main(int argc, char *argv[])
 
   if (S_ISREG(file_stat.st_mode))
   {
-    if (flag == interactive)
+    if (state.interactive == true)
     {
       printf("MyCp overwrite '%s'? ", argv[optind + 1]);
       if (getchar() != 'y')
@@ -182,7 +195,7 @@ int main(int argc, char *argv[])
       while ((getchar()) != '\n'); // cleaning buffer
     }
 
-    if (flag == force)
+    if (state.force == true)
     {
       if (chmod(argv[argc - 1], 0777) != 0)
       {
@@ -211,12 +224,12 @@ int main(int argc, char *argv[])
       exit(-1);
     }    
 
-    if (flag == verbose)
+    if (state.verbose == true)
       printf("'%s' -> '%s'\n", argv[optind], argv[optind + 1]);
 
     CopyFile(fd_1, fd_2, buf);
 
-    if (flag == force)
+    if (state.force == true)
     {
       if (chmod(argv[argc-1], file_stat.st_mode) != 0)
       {
