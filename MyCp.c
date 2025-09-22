@@ -33,36 +33,9 @@ struct flags_in_line
 int main(int argc, char *argv[])
 {
   int opt;
-  int flag = no_flag;
   int option_index = 0;
 
   struct flags_in_line state = {0};
-
-  // if (mkdir("dir_000", 0400) == -1) {
-  //     perror("Ошибка создания папки");
-  //     return -1;
-  // }
-
-  // int fd = open("no_acces_file.txt", O_CREAT | O_WRONLY | O_TRUNC, 0400);
-    
-  //   if (fd == -1) {
-  //       fprintf(stderr, "Ошибка создания файла: %s\n", strerror(errno));
-  //       return -1;
-  //   }
-    
-  //   
-  //   close(fd);
-  //   printf("Файл создан: %s с правами %o\n", "no_acces_file.txt", 0400);
-  //   return 0;
-
-  // if (access(argv[argc-1], W_OK) == 0)
-  // {
-  //   printf("Есть право на запись\n");
-  // }
-  // else
-  // {
-  //   printf("нет права на запись\n");
-  // }
 
   while ((opt = getopt_long(argc, argv, "fvi", long_options, &option_index)) != -1)
   {
@@ -70,17 +43,14 @@ int main(int argc, char *argv[])
     {
     case 'v':
       state.verbose = true;
-      flag = verbose;
       break;
 
     case 'f':
       state.force = true;
-      flag = force;
       break;
 
     case 'i':
       state.interactive = true;
-      flag = interactive;
       break;
     default:
       return 0;
@@ -108,7 +78,6 @@ int main(int argc, char *argv[])
   }
 
   char buf[128];
-  buf[127] = '\0';
   if (S_ISDIR(file_stat.st_mode)) // determening that the last string referring to dir
   {
     for (int i = optind; i < argc - 1; i++)
