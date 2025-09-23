@@ -2,11 +2,13 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/stat.h>
-#include <string.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
+static const size_t size_buf = 128;
 
 struct option long_options[] = {
     {"force", no_argument, 0, 'f'},
@@ -37,6 +39,12 @@ int main(int argc, char *argv[])
 
   struct flags_in_line state = {0};
 
+  if (argc == 1)
+  {
+    fprintf(stderr, "MyCp: missing file operand\n");
+    return 0;
+  }
+
   while ((opt = getopt_long(argc, argv, "fvi", long_options, &option_index)) != -1)
   {
     switch (opt)
@@ -65,28 +73,26 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  if (argc - optind == 1)
-  {
-    fprintf(stderr, "MyCp: missing file operand\n");
-    exit(-1);
-  }
-
   if (argc - optind > 3 && !S_ISDIR(file_stat.st_mode))
   {
     fprintf(stderr, "MyCp: target '%s': Not a directory\n", argv[argc - 1]);
     exit(-1);
   }
 
-  char buf[128];
+  char buf[size_buf];
   if (S_ISDIR(file_stat.st_mode)) // determening that the last string referring to dir
   {
     for (int i = optind; i < argc - 1; i++)
     {
-      strcpy(buf, argv[argc - 1]);
-      buf[strlen(buf)] = '/';
-      char *result = strcat(buf, argv[i]);
+      if(snprintf(buf, size_buf, "%s/%s", argv[argc - 1], argv[i]) == size_buf)
+      {
+        printf("Internal error\n");
+        return 0;
+      }
 
-      if (state.interactive == true)
+      char *result = buf;
+
+      if (state.interactive)
       {
         printf("MyCp overwrite '%s'? ", result);
         if (getchar() != 'y')
@@ -100,7 +106,7 @@ int main(int argc, char *argv[])
           ; // cleaning buffer
       }
 
-      if (state.force == true)
+      if (state.force)
       {
         if (chmod(argv[argc - 1], 0777) != 0)
         {
@@ -111,18 +117,12 @@ int main(int argc, char *argv[])
 
         if (access(argv[argc - 1], F_OK) != 0)
         {
-          fprintf(stderr, "MyCat: file %s does not exist\n", argv[argc - 1]);
+          fprintf(stderr, "MyCp: file %s does not exist\n", argv[argc - 1]);
           return 1;
         }
       }
 
-      int fd_1 = open(argv[i], O_RDONLY);
-      if (fd_1 < 0)
-      {
-        fprintf(stderr, "MyCp: %s: %s\n", argv[i], strerror(errno));
-        exit(-1);
-      }
-
+      int fd_1 = Open(argv[i], O_RDONLY);
       int fd_2 = open(result, O_WRONLY | O_CREAT | O_TRUNC, 0777);
       if (fd_2 < 0)
       {
@@ -130,20 +130,18 @@ int main(int argc, char *argv[])
         exit(-1);
       }
 
-      if (state.verbose == true)
+      CopyFile(fd_1, fd_2, buf, size_buf);
+
+      if (state.verbose)
         printf("'%s' -> '%s'\n", argv[i], result);
 
-      CopyFile(fd_1, fd_2, buf);
-
-      if (state.force == true)
+      if (state.force)
       {
         if (chmod(argv[argc-1], file_stat.st_mode) != 0)
-        {
           printf("Mistake in returning state of directory\n");
-        }
       }
 
-      for (int i = 0; i < 128; i++) buf[i] = 0; //cleaning buf
+      for (int i = 0; i < size_buf; i++) buf[i] = 0; //cleaning buf
 
       close(fd_1);
       close(fd_2);
@@ -152,7 +150,7 @@ int main(int argc, char *argv[])
 
   if (S_ISREG(file_stat.st_mode))
   {
-    if (state.interactive == true)
+    if (state.interactive)
     {
       printf("MyCp overwrite '%s'? ", argv[optind + 1]);
       if (getchar() != 'y')
@@ -164,7 +162,7 @@ int main(int argc, char *argv[])
       while ((getchar()) != '\n'); // cleaning buffer
     }
 
-    if (state.force == true)
+    if (state.force)
     {
       if (chmod(argv[argc - 1], 0777) != 0)
       {
@@ -174,31 +172,25 @@ int main(int argc, char *argv[])
 
       if (access(argv[argc - 1], F_OK) != 0)
       {
-        fprintf(stderr, "MyCat: file %s does not exist\n", argv[argc - 1]);
+        fprintf(stderr, "MyCp: file %s does not exist\n", argv[argc - 1]);
         return 0;
       }
     }
 
-    int fd_1 = open(argv[optind], O_RDONLY); // openning file to copy
-    if (fd_1 < 0)
-    {
-      fprintf(stderr, "MyCat: %s: %s\n", argv[optind], strerror(errno));
-      exit(-1);
-    }
-
+    int fd_1 = Open(argv[optind], O_RDONLY); // openning file to copy
     int fd_2 = open(argv[optind + 1], O_WRONLY | O_CREAT | O_TRUNC, 0777);
     if (fd_2 < 0)
     {
-      fprintf(stderr, "MyCat: %s: %s\n", argv[optind + 1], strerror(errno));
+      fprintf(stderr, "MyCp: %s: %s\n", argv[optind + 1], strerror(errno));
       exit(-1);
     }    
 
-    if (state.verbose == true)
+    if (state.verbose)
       printf("'%s' -> '%s'\n", argv[optind], argv[optind + 1]);
 
-    CopyFile(fd_1, fd_2, buf);
+    CopyFile(fd_1, fd_2, buf, size_buf);
 
-    if (state.force == true)
+    if (state.force)
     {
       if (chmod(argv[argc-1], file_stat.st_mode) != 0)
       {

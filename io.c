@@ -37,17 +37,17 @@ int Open(char * filename, int o_flags, ...)
   return fd;
 }
 
-void CopyFile(int fd_read, int fd_write, char* buf)
+void CopyFile(int fd_read, int fd_write, char* buf, size_t size_buf)
 {
     int n = 0;
     ssize_t written = 0;
   do
   {
-    n = Read(fd_read, buf, sizeof(buf));
+    n = Read(fd_read, buf, size_buf);
     
     while(n != written)
     {
-      ssize_t w = Write(fd_write, buf + written, n);
+      ssize_t w = Write(fd_write, buf + written, n - written);
       written += w;
     }
 
